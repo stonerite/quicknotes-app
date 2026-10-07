@@ -5,6 +5,7 @@ const errorMessage = document.querySelector('#error-message');
 const searchInput = document.querySelector('#search-input');
 const notesList = document.querySelector('#notes-list');
 const noteCount = document.querySelector('#note-count');
+const clearAllButton = document.querySelector('#clear-all');
 
 const MAX_LENGTH = 200;
 const STORAGE_KEY = 'quicknotes-notes';
@@ -54,6 +55,7 @@ function deleteNote(id) {
 function render() {
   notesList.textContent = '';
   noteCount.textContent = getCountMessage(notes.length);
+  clearAllButton.hidden = notes.length === 0;
 
   const visible = getVisibleNotes();
 
@@ -119,5 +121,13 @@ form.addEventListener('submit', (event) => {
 });
 
 searchInput.addEventListener('input', render);
+
+clearAllButton.addEventListener('click', () => {
+  if (confirm('Delete all notes?')) {
+    notes = [];
+    saveNotes();
+    render();
+  }
+});
 
 render();
