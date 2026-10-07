@@ -2,11 +2,28 @@ const form = document.querySelector('#note-form');
 const noteInput = document.querySelector('#note-input');
 const categorySelect = document.querySelector('#note-category');
 const errorMessage = document.querySelector('#error-message');
+const searchInput = document.querySelector('#search-input');
 const notesList = document.querySelector('#notes-list');
 const noteCount = document.querySelector('#note-count');
 
 const MAX_LENGTH = 200;
-let notes = [];
+const STORAGE_KEY = 'quicknotes-notes';
+
+let notes = loadNotes();
+
+function loadNotes() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveNotes() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+}
 
 function getCountMessage(total) {
   if (total === 0) return 'You have no notes yet.';
@@ -20,8 +37,17 @@ function validate(text) {
   return '';
 }
 
+function getVisibleNotes() {
+  const words = searchInput.value.toLowerCase().split(/\s+/).filter(Boolean);
+  return notes.filter((note) => {
+    const text = note.text.toLowerCase();
+    return words.every((word) => text.includes(word));
+  });
+}
+
 function deleteNote(id) {
   notes = notes.filter((note) => note.id !== id);
+  saveNotes();
   render();
 }
 
@@ -29,7 +55,17 @@ function render() {
   notesList.textContent = '';
   noteCount.textContent = getCountMessage(notes.length);
 
-  notes.forEach((note) => {
+  const visible = getVisibleNotes();
+
+  if (visible.length === 0 && searchInput.value.trim() !== '') {
+    const empty = document.createElement('li');
+    empty.className = 'empty-message';
+    empty.textContent = 'No notes match your search.';
+    notesList.append(empty);
+    return;
+  }
+
+  visible.forEach((note) => {
     const li = document.createElement('li');
     li.className = 'note-card category-' + note.category.toLowerCase();
 
@@ -77,8 +113,11 @@ form.addEventListener('submit', (event) => {
     category: categorySelect.value,
     createdAt: new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
   });
+  saveNotes();
   noteInput.value = '';
   render();
 });
+
+searchInput.addEventListener('input', render);
 
 render();
